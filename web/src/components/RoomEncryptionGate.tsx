@@ -6,10 +6,12 @@ import { ApiUnauthorizedError, recoverRoomE2eeFromServerData, updateWorkspaceSet
 import { markIntentionalSignOut } from "@/lib/auth-state";
 import {
   ensureLaunchAuthenticated,
+  hasPersistentLaunchOk,
   isLaunchAuthenticated,
   launchReauthRecentlyAttempted,
   markLaunchAuthenticated,
   recordLaunchReauthAttempt,
+  shouldForceLaunchReauth,
 } from "@/lib/launch-auth";
 import { readLaunchHint, writeLaunchHint, type LaunchHint } from "@/lib/launch-hint";
 import { getProfileCached } from "@/lib/profile-cache";
@@ -156,11 +158,19 @@ export default function RoomEncryptionGate({ children }: { children: ReactNode }
         workspaceRef.current = workspace;
         writeLaunchHint(workspace?.id ? { workspaceId: workspace.id, roomLocked: roomRequiresUnlock(workspace) } : null);
         if (!ensureLaunchAuthenticated()) {
-          // Reauth at most once per launch — never loop. If we already forced a
-          // reauth moments ago (the launch marker didn't survive in this PWA,
-          // e.g. partitioned sessionStorage), trust the still-valid session and
-          // proceed instead of logging out again into an endless sign-in loop.
-          if (workspace?.settings?.reauthOnLaunch !== false && !launchReauthRecentlyAttempted()) {
+          // Decide once, from the server-provided settings:
+          // - staySignedInDays > 0 and the persistent open-stamp is fresh →
+          //   skip the forced re-auth (this is what keeps users signed in
+          //   across iOS cold-starts within their chosen window),
+          // - reauthOnLaunch === false keeps the legacy "never force" meaning,
+          // - otherwise reauth at most once per launch — never loop (the
+          //   cooldown guard from the reconnect-loop fix stays intact).
+          if (shouldForceLaunchReauth({
+            reauthOnLaunch: workspace?.settings?.reauthOnLaunch,
+            staySignedInDays: workspace?.settings?.staySignedInDays ?? 0,
+            persistentOk: hasPersistentLaunchOk(workspace?.settings?.staySignedInDays ?? 0),
+            reauthAttemptedRecently: launchReauthRecentlyAttempted(),
+          })) {
             recordLaunchReauthAttempt();
             beginLaunchReauth();
             return;
