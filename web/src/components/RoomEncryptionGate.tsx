@@ -164,11 +164,18 @@ export default function RoomEncryptionGate({ children }: { children: ReactNode }
         workspaceRef.current = workspace;
         writeLaunchHint(workspace?.id ? { workspaceId: workspace.id, roomLocked: roomRequiresUnlock(workspace) } : null);
         if (ensureLaunchAuthenticated()) {
-          // Warm launch (session marker survived): the profile fetch just
-          // proved real server authentication, so slide the stay-signed-in
-          // window forward. Without this the stamp would stay pinned to the
-          // original cold start and daily users could still hit a forced
-          // re-auth mid-window (contract: sliding window).
+          // Warm launch (session marker survived): slide the stay-signed-in
+          // window forward so daily users are never forced out mid-window
+          // (contract: every confirmed open re-stamps). "Confirmed" means a
+          // successful profile load, which may be served from the 30 s
+          // profile cache rather than a live server round trip. That is
+          // accepted by design: the stamp grants NO authentication — the
+          // HttpOnly server session cookie is the sole authority, every API
+          // 401 still routes into the reconnect flow, and cross-tab sign-out
+          // flushes all ss:* state including this stamp. The cold-start path
+          // has had the same cached-profile property since before this
+          // feature. Worst case is up to 30 s of extra staleness in a
+          // re-auth-skip decision.
           stampPersistentLaunch();
         } else {
           // Decide once, from the server-provided settings:
