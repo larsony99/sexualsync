@@ -33,6 +33,20 @@ export function stampPersistentLaunch(now = Date.now()): void {
   }
 }
 
+// Clears only the persistent stamp (not the re-auth cooldown counter, which
+// must survive the logout redirect to keep the reconnect-loop guard armed).
+// The forced launch re-auth is a sign-out: without this, the next account to
+// sign in on the same device would inherit the previous user's stamp and
+// skip its own launch re-auth inside the window.
+export function clearPersistentLaunchStamp(): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem(LAUNCH_PERSISTED_AT_KEY);
+  } catch {
+    // Storage blocked; there is nothing to clear.
+  }
+}
+
 export function hasPersistentLaunchOk(days: number, now = Date.now()): boolean {
   if (!(days > 0)) return false;
   if (typeof window === "undefined") return false;

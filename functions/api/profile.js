@@ -292,13 +292,11 @@ export async function onRequest(context) {
 
         if (payload.staySignedInDays !== undefined) {
           // Integer days the installed app may skip the forced launch re-auth.
-          // Capped at the server session lifetime (30 days) so a client marker
-          // can never outlive real authentication.
+          // JSON number type only (strings rejected) and capped at the server
+          // session lifetime (30 days) so a client marker can never outlive
+          // real authentication.
           const raw = payload.staySignedInDays;
-          const staySignedInDays =
-            typeof raw === "number" || (typeof raw === "string" && raw.trim() !== "")
-              ? Number(raw)
-              : NaN;
+          const staySignedInDays = typeof raw === "number" ? raw : NaN;
           if (!Number.isInteger(staySignedInDays) || staySignedInDays < 0 || staySignedInDays > 30) {
             return { abort: jsonResponse(400, { error: "staySignedInDays must be an integer between 0 and 30" }) };
           }

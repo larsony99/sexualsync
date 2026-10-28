@@ -5,6 +5,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  clearPersistentLaunchStamp,
   hasPersistentLaunchOk,
   markLaunchAuthenticated,
   shouldForceLaunchReauth,
@@ -120,5 +121,16 @@ describe("sign-out sweep", () => {
     expect(localStorageMock.getItem(STAMP_KEY)).toBeNull();
     expect(localStorageMock.getItem("ss:auth:launch-ok")).toBeNull();
     expect(localStorageMock.getItem("unrelated-key")).toBe("keep");
+  });
+
+  it("clearPersistentLaunchStamp drops the stamp so the next account cannot ride it", () => {
+    markLaunchAuthenticated();
+    localStorageMock.setItem("reconnect-loop-guard-key", "armed");
+    expect(hasPersistentLaunchOk(30)).toBe(true);
+    clearPersistentLaunchStamp();
+    expect(localStorageMock.getItem(STAMP_KEY)).toBeNull();
+    expect(hasPersistentLaunchOk(30)).toBe(false);
+    // The cooldown counter lives outside the stamp and must survive.
+    expect(localStorageMock.getItem("reconnect-loop-guard-key")).toBe("armed");
   });
 });

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { ApiUnauthorizedError, recoverRoomE2eeFromServerData, updateWorkspaceSettings } from "@/lib/api";
 import { markIntentionalSignOut } from "@/lib/auth-state";
 import {
+  clearPersistentLaunchStamp,
   ensureLaunchAuthenticated,
   hasPersistentLaunchOk,
   isLaunchAuthenticated,
@@ -104,6 +105,10 @@ function roomRequiresUnlock(workspace: Workspace | null | undefined) {
 function beginLaunchReauth() {
   clearRoomE2eeKeyCache();
   clearVaultKeyCache();
+  // This redirect is a sign-out; drop the persistent stay-signed-in stamp so
+  // the next account on this device cannot ride it, while leaving the
+  // re-auth cooldown counter armed against the reconnect loop.
+  clearPersistentLaunchStamp();
   markIntentionalSignOut();
   window.location.replace("/api/auth/logout?reason=launch");
 }

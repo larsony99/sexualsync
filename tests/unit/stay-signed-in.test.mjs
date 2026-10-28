@@ -73,7 +73,7 @@ test("staySignedInDays accepts an in-range integer and persists it", async () =>
 });
 
 test("staySignedInDays rejects non-integers, negatives and out-of-range values", async () => {
-  for (const bad of [1.5, -1, 31, "seven", {}, []]) {
+  for (const bad of [1.5, -1, 31, "seven", "7", "", true, {}, []]) {
     const env = makeKvEnv();
     seedWorkspace(env, { reauthOnLaunch: true, staySignedInDays: 3 });
 
