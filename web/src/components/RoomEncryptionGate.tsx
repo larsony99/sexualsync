@@ -13,6 +13,7 @@ import {
   markLaunchAuthenticated,
   recordLaunchReauthAttempt,
   shouldForceLaunchReauth,
+  stampPersistentLaunch,
 } from "@/lib/launch-auth";
 import { readLaunchHint, writeLaunchHint, type LaunchHint } from "@/lib/launch-hint";
 import { getProfileCached } from "@/lib/profile-cache";
@@ -162,7 +163,14 @@ export default function RoomEncryptionGate({ children }: { children: ReactNode }
         const workspace = profile.activeWorkspace;
         workspaceRef.current = workspace;
         writeLaunchHint(workspace?.id ? { workspaceId: workspace.id, roomLocked: roomRequiresUnlock(workspace) } : null);
-        if (!ensureLaunchAuthenticated()) {
+        if (ensureLaunchAuthenticated()) {
+          // Warm launch (session marker survived): the profile fetch just
+          // proved real server authentication, so slide the stay-signed-in
+          // window forward. Without this the stamp would stay pinned to the
+          // original cold start and daily users could still hit a forced
+          // re-auth mid-window (contract: sliding window).
+          stampPersistentLaunch();
+        } else {
           // Decide once, from the server-provided settings:
           // - staySignedInDays > 0 and the persistent open-stamp is fresh →
           //   skip the forced re-auth (this is what keeps users signed in
