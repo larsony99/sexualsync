@@ -710,7 +710,14 @@ function SettingsSheet({
                 <SettingsLink
                   href="/more"
                   title="Account and data"
-                  sub={ready ? `Download or delete · ${ready.backlog.ideas.length} Kinks · ${ready.shelf.items.length} Shelf items` : "Download or delete your data"}
+                  sub={ready
+                    ? [
+                        "Stay-signed-in window",
+                        "Download or delete",
+                        ...(ready.backlog.ideas.length ? [`${ready.backlog.ideas.length} Kinks`] : []),
+                        ...(ready.shelf.items.length ? [`${ready.shelf.items.length} Shelf items`] : []),
+                      ].join(" · ")
+                    : "Stay-signed-in window · download or delete your data"}
                   arrow="→"
                 />
                 <a className="settings-link pressable" href="/api/auth/logout" onClick={prepareSignOut}>

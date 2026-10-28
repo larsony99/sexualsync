@@ -195,7 +195,7 @@ function Body({
       </section>
 
       <section className="settings-section">
-        <p className="eyebrow">Session</p>
+        <p className="eyebrow">Session and sign-in</p>
         <div className="settings-card">
           <StaySignedInRow workspace={state.workspace} />
           <a className="settings-link pressable" href="/api/auth/logout" onClick={prepareSignOut}>
