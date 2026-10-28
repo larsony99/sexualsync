@@ -15,6 +15,7 @@ import { prepareSignOut } from "@/lib/signout";
 import { partnerOf } from "@/lib/workspace";
 import { getCachedResource, setCachedResource, useColdStart } from "@/lib/resource-cache";
 import { ensurePushSubscription, recordPushSave } from "@/lib/push-subscription";
+import StaySignedInRow from "@/components/StaySignedInRow";
 import {
   ApiUnauthorizedError,
   createClaimableInvite,
@@ -710,16 +711,10 @@ function SettingsSheet({
                 <SettingsLink
                   href="/more"
                   title="Account and data"
-                  sub={ready
-                    ? [
-                        "Stay-signed-in window",
-                        "Download or delete",
-                        ...(ready.backlog.ideas.length ? [`${ready.backlog.ideas.length} Kinks`] : []),
-                        ...(ready.shelf.items.length ? [`${ready.shelf.items.length} Shelf items`] : []),
-                      ].join(" · ")
-                    : "Stay-signed-in window · download or delete your data"}
+                  sub={ready ? `Download or delete · ${ready.backlog.ideas.length} Kinks · ${ready.shelf.items.length} Shelf items` : "Download or delete your data"}
                   arrow="→"
                 />
+                {ready && <StaySignedInRow workspace={ready.workspace} />}
                 <a className="settings-link pressable" href="/api/auth/logout" onClick={prepareSignOut}>
                   <span>
                     Sign out of this device
